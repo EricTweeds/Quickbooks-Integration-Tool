@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.IO;
+using System.Xml;
 using System.Windows.Forms;
 using Interop.QBFC13;
 using RedstoneQuickbooks.Session_Framework;
