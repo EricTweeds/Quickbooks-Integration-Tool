@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.IO;
-using System.Xml;
+using System.Drawing;
 using System.Windows.Forms;
 using Interop.QBFC13;
 using RedstoneQuickbooks.Session_Framework;
@@ -77,17 +73,100 @@ namespace RedstoneQuickbooks
                 }
             }
         }
+        private double QBFCLatestVersion(QBSessionManager SessionManager)
+        {
+            // Use oldest version to ensure that this application work with any QuickBooks (US)
+            IMsgSetRequest msgset = SessionManager.CreateMsgSetRequest("US", 1, 0);
+            msgset.AppendHostQueryRq();
+            IMsgSetResponse QueryResponse = SessionManager.DoRequests(msgset);
+            //MessageBox.Show("Host query = " + msgset.ToXMLString());
+            //SaveXML(msgset.ToXMLString());
 
+
+            // The response list contains only one response,
+            // which corresponds to our single HostQuery request
+            IResponse response = QueryResponse.ResponseList.GetAt(0);
+
+            // Please refer to QBFC Developers Guide for details on why 
+            // "as" clause was used to link this derrived class to its base class
+            IHostRet HostResponse = response.Detail as IHostRet;
+            IBSTRList supportedVersions = HostResponse.SupportedQBXMLVersionList as IBSTRList;
+
+            int i;
+            double vers;
+            double LastVers = 0;
+            string svers = null;
+
+            for (i = 0; i <= supportedVersions.Count - 1; i++)
+            {
+                svers = supportedVersions.GetAt(i);
+                vers = Convert.ToDouble(svers);
+                if (vers > LastVers)
+                {
+                    LastVers = vers;
+                }
+            }
+            return LastVers;
+        }
+        public IMsgSetRequest getLatestMsgSetRequest(QBSessionManager sessionManager)
+        {
+            // Find and adapt to supported version of QuickBooks
+            double supportedVersion = QBFCLatestVersion(sessionManager);
+
+            short qbXMLMajorVer = 0;
+            short qbXMLMinorVer = 0;
+
+            if (supportedVersion >= 6.0)
+            {
+                qbXMLMajorVer = 6;
+                qbXMLMinorVer = 0;
+            }
+            else if (supportedVersion >= 5.0)
+            {
+                qbXMLMajorVer = 5;
+                qbXMLMinorVer = 0;
+            }
+            else if (supportedVersion >= 4.0)
+            {
+                qbXMLMajorVer = 4;
+                qbXMLMinorVer = 0;
+            }
+            else if (supportedVersion >= 3.0)
+            {
+                qbXMLMajorVer = 3;
+                qbXMLMinorVer = 0;
+            }
+            else if (supportedVersion >= 2.0)
+            {
+                qbXMLMajorVer = 2;
+                qbXMLMinorVer = 0;
+            }
+            else if (supportedVersion >= 1.1)
+            {
+                qbXMLMajorVer = 1;
+                qbXMLMinorVer = 1;
+            }
+            else
+            {
+                qbXMLMajorVer = 1;
+                qbXMLMinorVer = 0;
+                MessageBox.Show("It seems that you are running QuickBooks 2002 Release 1. We strongly recommend that you use QuickBooks' online update feature to obtain the latest fixes and enhancements");
+            }
+
+            // Create the message set request object
+            IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("US", qbXMLMajorVer, qbXMLMinorVer);
+            return requestMsgSet;
+        }
         private IMsgSetRequest Build_AddSalesReciept()
         {
             
             QBSessionManager sessionManager = new QBSessionManager();
             sessionManager.OpenConnection("", "Restone Integration Tool");
-            ENOpenMode omDontCare = new ENOpenMode();
-            sessionManager.BeginSession("", omDontCare);
+            sessionManager.BeginSession("", ENOpenMode.omDontCare);
 
             // IMsgSetRequest requestMsgSet = sessionManager.getMsgSetRequest();
-            IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("CA", 11, 0);
+            //IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("CA", 11, 0);
+            IMsgSetRequest requestMsgSet = getLatestMsgSetRequest(sessionManager);
             requestMsgSet.Attributes.OnError = ENRqOnError.roeContinue;
 
             ISalesReceiptAdd salesRecieptAdd = requestMsgSet.AppendSalesReceiptAddRq();
@@ -120,20 +199,21 @@ namespace RedstoneQuickbooks
                         var values = line.Split(',');
                         items.Add(values[4]);
                         qtys.Add(values[5]);
+                        descriptions.Add(values[6]);
                         //rates.Add(values[]);
                         amounts.Add(values[11]);
                         taxes.Add(values[12]);
                         //textBox1.AppendText("\r\n" + values[4]);
 
                     }
-                    //for (int i = 1; i < items.Count; i++)
-                    //{
+                    for (int i = 1; i < items.Count; i++)
+                    {
                         IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
-                        salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(items[2]);
-                        salesRecieptLine.SalesReceiptLineAdd.Desc.SetValue("temp");
-                        salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[2]));
-                        salesRecieptLine.SalesReceiptLineAdd.Amount.SetValue(Convert.ToDouble(amounts[2].Substring(1)));
-                        if(taxes[2] != "$0.00")
+                        salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(items[i]);
+                        salesRecieptLine.SalesReceiptLineAdd.Desc.SetValue(descriptions[i]);
+                        salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[i]));
+                        salesRecieptLine.SalesReceiptLineAdd.Amount.SetValue(Convert.ToDouble(amounts[i].Substring(1)));
+                        if(taxes[i] != "$0.00")
                         {
                             //only have hst, so any tax value is H
                             salesRecieptLine.SalesReceiptLineAdd.SalesTaxCodeRef.FullName.SetValue("H");
@@ -143,7 +223,7 @@ namespace RedstoneQuickbooks
                             //If tax is set to 0, they're tax exempt then
                             salesRecieptLine.SalesReceiptLineAdd.SalesTaxCodeRef.FullName.SetValue("E");
                         }
-                    //}
+                    }
                 }
             }
             else
@@ -151,6 +231,8 @@ namespace RedstoneQuickbooks
                 textBox1.AppendText("\r\nPlease select a file first");
                 return null;
             }
+            IMsgSetResponse responseSet = sessionManager.DoRequests(requestMsgSet);
+            textBox1.AppendText("\r\n" + responseSet.ToXMLString());
             //textBox1.AppendText("\r\n" + requestMsgSet.ToXMLString());
             return requestMsgSet;
         }
@@ -192,8 +274,17 @@ namespace RedstoneQuickbooks
 
         private void button2_Click(object sender, EventArgs e)
         {
-            processRequestFromQB(Build_AddSalesReciept());
+            Build_AddSalesReciept();
+            //processRequestFromQB(Build_AddSalesReciept());
             //disconnectFromQB();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            //Done pressed, cleanup and close app
+            disconnectFromQB();
+            SessionManager.getInstance().Dispose();
+            Application.Exit();
         }
     }
 
