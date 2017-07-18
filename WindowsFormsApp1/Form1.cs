@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Drawing;
 using System.Windows.Forms;
 using Interop.QBFC13;
 using RedstoneQuickbooks.Session_Framework;
@@ -28,26 +27,21 @@ namespace RedstoneQuickbooks
         }
 
         SessionManager sessionManager;
-        private short maxVersion;
         private string fileStream;
-        private List<List<string>> csvInputs;
 
         // CONNECTION TO QB
         private void connectToQB()
         {
             sessionManager = SessionManager.getInstance();
-            maxVersion = sessionManager.QBsdkMajorVersion;
             textBox1.AppendText("\r\nConnection with Quickbooks established");
         }
         private IMsgSetResponse processRequestFromQB(IMsgSetRequest requestSet)
         {
             try
             {
-                //MessageBox.Show(requestSet.ToXMLString());
                 textBox1.AppendText("\r\n" + requestSet.ToXMLString());
                 IMsgSetResponse responseSet = sessionManager.doRequest(true, ref requestSet);
-                //MessageBox.Show(responseSet.ToXMLString());
-                textBox1.AppendText("\r\n" + responseSet.ToXMLString());
+                textBox1.AppendText("\r\n Response:" + responseSet.ToXMLString());
                 return responseSet;
             }
             catch (Exception e)
@@ -79,8 +73,6 @@ namespace RedstoneQuickbooks
             IMsgSetRequest msgset = SessionManager.CreateMsgSetRequest("US", 1, 0);
             msgset.AppendHostQueryRq();
             IMsgSetResponse QueryResponse = SessionManager.DoRequests(msgset);
-            //MessageBox.Show("Host query = " + msgset.ToXMLString());
-            //SaveXML(msgset.ToXMLString());
 
 
             // The response list contains only one response,
@@ -150,22 +142,63 @@ namespace RedstoneQuickbooks
             {
                 qbXMLMajorVer = 1;
                 qbXMLMinorVer = 0;
-                MessageBox.Show("It seems that you are running QuickBooks 2002 Release 1. We strongly recommend that you use QuickBooks' online update feature to obtain the latest fixes and enhancements");
             }
 
             // Create the message set request object
             IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("US", qbXMLMajorVer, qbXMLMinorVer);
             return requestMsgSet;
         }
+
+        private string getItemInfo(string itemName)
+        {
+            connectToQB();
+            IMsgSetResponse responseMsgSet = processRequestFromQB(buildItemQueryRq(itemName));
+            disconnectFromQB();
+            IResponse response = responseMsgSet.ResponseList.GetAt(0);
+            IORItemRetList OR = response.Detail as IORItemRetList;
+            var fullName = "";
+            if (OR.GetAt(0).ItemInventoryRet != null && OR.GetAt(0).ItemInventoryRet.FullName != null)
+            {
+                fullName = OR.GetAt(0).ItemInventoryRet.FullName.GetValue();
+            }
+            else if (OR.GetAt(0).ItemOtherChargeRet != null && OR.GetAt(0).ItemOtherChargeRet.FullName != null)
+            {
+                fullName = OR.GetAt(0).ItemOtherChargeRet.FullName.GetValue();
+            }
+            else if (OR.GetAt(0).ItemDiscountRet != null && OR.GetAt(0).ItemDiscountRet.FullName != null)
+            {
+                fullName = OR.GetAt(0).ItemDiscountRet.FullName.GetValue();
+            }
+            else if (OR.GetAt(0).ItemNonInventoryRet != null && OR.GetAt(0).ItemNonInventoryRet.FullName != null)
+            {
+                fullName = OR.GetAt(0).ItemNonInventoryRet.FullName.GetValue();
+            }
+            else if (OR.GetAt(0).ItemServiceRet != null && OR.GetAt(0).ItemServiceRet.FullName != null)
+            {
+                fullName = OR.GetAt(0).ItemServiceRet.FullName.GetValue();
+            }
+            return fullName;
+        }
+        private IMsgSetRequest buildItemQueryRq(string fullName)
+        {
+            IMsgSetRequest requestMsgSet = sessionManager.getMsgSetRequest();
+            requestMsgSet.Attributes.OnError = ENRqOnError.roeContinue;
+            IItemQuery itemQuery = requestMsgSet.AppendItemQueryRq();
+            if (fullName != null)
+            {
+                itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.MatchCriterion.SetValue(ENMatchCriterion.mcContains);
+                itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.Name.SetValue(fullName);
+            }
+            //Only need FullName
+            itemQuery.IncludeRetElementList.Add("FullName");
+            return requestMsgSet;
+        }
         private IMsgSetRequest Build_AddSalesReciept()
         {
-            
             QBSessionManager sessionManager = new QBSessionManager();
-            sessionManager.OpenConnection("", "Restone Integration Tool");
+            sessionManager.OpenConnection("", "Redstone Integration Tool");
             sessionManager.BeginSession("", ENOpenMode.omDontCare);
 
-            // IMsgSetRequest requestMsgSet = sessionManager.getMsgSetRequest();
-            //IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("CA", 11, 0);
             IMsgSetRequest requestMsgSet = getLatestMsgSetRequest(sessionManager);
             requestMsgSet.Attributes.OnError = ENRqOnError.roeContinue;
 
@@ -183,47 +216,41 @@ namespace RedstoneQuickbooks
 
             if(fileStream != null)
             {
-                using (var fs = File.OpenRead(fileStream.ToString()))
-                using (var reader = new StreamReader(fs))
+                try
                 {
-                    List<string> items = new List<string>();
-                    List<string> qtys = new List<string>();
-                    List<string> rates = new List<string>();
-                    List<string> amounts = new List<string>();
-                    List<string> taxes = new List<string>();
-                    List<string> descriptions = new List<string>();
-                  
-                    while (!reader.EndOfStream)
+                    using (var fs = File.OpenRead(fileStream.ToString()))
+                    using (var reader = new StreamReader(fs))
                     {
-                        var line = reader.ReadLine();
-                        var values = line.Split(',');
-                        items.Add(values[4]);
-                        qtys.Add(values[5]);
-                        descriptions.Add(values[6]);
-                        //rates.Add(values[]);
-                        amounts.Add(values[11]);
-                        taxes.Add(values[12]);
-                        //textBox1.AppendText("\r\n" + values[4]);
+                        List<string> items = new List<string>();
+                        List<string> qtys = new List<string>();
 
-                    }
-                    for (int i = 1; i < items.Count; i++)
-                    {
-                        IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
-                        salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(items[i]);
-                        salesRecieptLine.SalesReceiptLineAdd.Desc.SetValue(descriptions[i]);
-                        salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[i]));
-                        salesRecieptLine.SalesReceiptLineAdd.Amount.SetValue(Convert.ToDouble(amounts[i].Substring(1)));
-                        if(taxes[i] != "$0.00")
+
+                        while (!reader.EndOfStream)
                         {
-                            //only have hst, so any tax value is H
-                            salesRecieptLine.SalesReceiptLineAdd.SalesTaxCodeRef.FullName.SetValue("H");
+                            var line = reader.ReadLine();
+                            var values = line.Split(',');
+                            items.Add(values[0]);
+                            qtys.Add(values[4]);
                         }
-                        else
+                        for (int i = 1; i < items.Count; i++)
                         {
-                            //If tax is set to 0, they're tax exempt then
-                            salesRecieptLine.SalesReceiptLineAdd.SalesTaxCodeRef.FullName.SetValue("E");
+                            IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
+                            if (getItemInfo(items[i]) != "")
+                            {
+                                salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo(items[i]));
+                            }
+                            else
+                            {
+                                textBox1.AppendText("\r\nError finding " + items[i] + " in Quickbooks");
+                            }
+                            salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[i]));
+                            salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE");
                         }
                     }
+                }
+                catch(Exception ex)
+                {
+                    textBox1.AppendText("\r\n" + ex);
                 }
             }
             else
@@ -231,9 +258,15 @@ namespace RedstoneQuickbooks
                 textBox1.AppendText("\r\nPlease select a file first");
                 return null;
             }
-            IMsgSetResponse responseSet = sessionManager.DoRequests(requestMsgSet);
-            textBox1.AppendText("\r\n" + responseSet.ToXMLString());
-            //textBox1.AppendText("\r\n" + requestMsgSet.ToXMLString());
+            try
+            {
+                IMsgSetResponse responseSet = sessionManager.DoRequests(requestMsgSet);
+                textBox1.AppendText("\r\n" + responseSet.ToXMLString());
+            }
+            catch (Exception e)
+            {
+                textBox1.AppendText("\r\n this error" + e); 
+            }
             return requestMsgSet;
         }
 
@@ -275,8 +308,6 @@ namespace RedstoneQuickbooks
         private void button2_Click(object sender, EventArgs e)
         {
             Build_AddSalesReciept();
-            //processRequestFromQB(Build_AddSalesReciept());
-            //disconnectFromQB();
         }
 
         private void button3_Click(object sender, EventArgs e)
