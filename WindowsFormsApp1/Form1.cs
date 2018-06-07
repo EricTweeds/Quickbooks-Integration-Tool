@@ -5,6 +5,10 @@ using System.Windows.Forms;
 using Interop.QBFC13;
 using RedstoneQuickbooks.Session_Framework;
 
+//Group items
+//Bottle Deposit:
+//750ml and 1500ml 20c, MAG = 1500ml
+//200ml and 375 10c
 
 namespace RedstoneQuickbooks
 {
@@ -13,7 +17,7 @@ namespace RedstoneQuickbooks
         public Form1()
         {
             InitializeComponent();
-            textBox1.AppendText("Welcome!");
+            consoleOutput.AppendText("Welcome!");
 
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -29,24 +33,28 @@ namespace RedstoneQuickbooks
         SessionManager sessionManager;
         private string fileStream;
 
+        private List<string> notFoundItems = new List<string>();
+
+        private List<string> groupItems = new List<string>();
+
         // CONNECTION TO QB
         private void connectToQB()
         {
             sessionManager = SessionManager.getInstance();
-            textBox1.AppendText("\r\nConnection with Quickbooks established");
+            consoleOutput.AppendText("\r\nConnection with Quickbooks established");
         }
         private IMsgSetResponse processRequestFromQB(IMsgSetRequest requestSet)
         {
             try
             {
-                textBox1.AppendText("\r\n" + requestSet.ToXMLString());
+                consoleOutput.AppendText("\r\n" + requestSet.ToXMLString());
                 IMsgSetResponse responseSet = sessionManager.doRequest(true, ref requestSet);
-                textBox1.AppendText("\r\n Response:" + responseSet.ToXMLString());
+                consoleOutput.AppendText("\r\n Response:" + responseSet.ToXMLString());
                 return responseSet;
             }
             catch (Exception e)
             {
-                textBox1.AppendText("\r\n" + e.Message);
+                consoleOutput.AppendText("\r\n" + e.Message);
                 return null;
             }
         }
@@ -59,7 +67,7 @@ namespace RedstoneQuickbooks
                     sessionManager.endSession();
                     sessionManager.closeConnection();
                     sessionManager = null;
-                    textBox1.AppendText("\r\nDisconnected from Quickbooks");
+                    consoleOutput.AppendText("\r\nDisconnected from Quickbooks");
                 }
                 catch (Exception e)
                 {
@@ -151,11 +159,38 @@ namespace RedstoneQuickbooks
 
         private string getItemInfo(string itemName)
         {
+            if (itemName == "Gift Certificate- VIP Tour & Tasting")
+            {
+                itemName = "Gift Certificate - VIP tasting";
+            }
             connectToQB();
-            IMsgSetResponse responseMsgSet = processRequestFromQB(buildItemQueryRq(itemName));
+            IMsgSetResponse responseMsgSet;
+            try
+            {
+                responseMsgSet = processRequestFromQB(buildItemQueryRq(itemName));
+            }
+            catch (Exception ex)
+            {
+                consoleOutput.AppendText("\r\n" + ex);
+                return "";
+            }
+
             disconnectFromQB();
             IResponse response = responseMsgSet.ResponseList.GetAt(0);
             IORItemRetList OR = response.Detail as IORItemRetList;
+
+            if (response.StatusCode == 1)
+            {
+                consoleOutput.AppendText("\r\n Could not find item:" + itemName);
+                notFoundItems.Add(itemName);
+                return "";
+            }
+            if (OR.GetAt(0).ItemGroupRet != null)
+            {
+                consoleOutput.AppendText("\r\n Group Item:" + itemName);
+                groupItems.Add(itemName);
+                return "";
+            }
             var fullName = "";
             if (OR.GetAt(0).ItemInventoryRet != null && OR.GetAt(0).ItemInventoryRet.FullName != null)
             {
@@ -177,40 +212,50 @@ namespace RedstoneQuickbooks
             {
                 fullName = OR.GetAt(0).ItemServiceRet.FullName.GetValue();
             }
+            else if (OR.GetAt(0).ItemGroupRet != null && OR.GetAt(0).ItemGroupRet.Name!= null)
+            {
+                fullName = OR.GetAt(0).ItemGroupRet.Name.GetValue();
+            }
             return fullName;
         }
         private IMsgSetRequest buildItemQueryRq(string fullName)
         {
             IMsgSetRequest requestMsgSet = sessionManager.getMsgSetRequest();
             requestMsgSet.Attributes.OnError = ENRqOnError.roeContinue;
-            IItemQuery itemQuery = requestMsgSet.AppendItemQueryRq();
-            if (fullName != null)
-            {
-                itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.MatchCriterion.SetValue(ENMatchCriterion.mcContains);
-                itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.Name.SetValue(fullName);
+
+            if (fullName != null) {
+                IItemQuery itemQuery = requestMsgSet.AppendItemQueryRq();
+                try
+                {
+                    itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.MatchCriterion.SetValue(ENMatchCriterion.mcEndsWith);
+                    itemQuery.ORListQuery.ListFilter.ORNameFilter.NameFilter.Name.SetValue(fullName);
+                }
+                catch (Exception ex)
+                {
+                    consoleOutput.AppendText("\r\n" + ex);
+                }
             }
             //Only need FullName
-            itemQuery.IncludeRetElementList.Add("FullName");
             return requestMsgSet;
+
         }
         private IMsgSetRequest Build_AddSalesReciept()
         {
             QBSessionManager sessionManager = new QBSessionManager();
-            sessionManager.OpenConnection("", "Redstone Integration Tool");
+            sessionManager.OpenConnection("", "Quickbooks Input Tool");
             sessionManager.BeginSession("", ENOpenMode.omDontCare);
 
             IMsgSetRequest requestMsgSet = getLatestMsgSetRequest(sessionManager);
             requestMsgSet.Attributes.OnError = ENRqOnError.roeContinue;
-
             ISalesReceiptAdd salesRecieptAdd = requestMsgSet.AppendSalesReceiptAddRq();
 
-            if(comboBox1.Text != "")
+            if (locationDropdown.Text != "")
             {
-                salesRecieptAdd.CustomerRef.FullName.SetValue(comboBox1.Text);
+                salesRecieptAdd.CustomerRef.FullName.SetValue(locationDropdown.Text);
             }
             else
             {
-                textBox1.AppendText("\r\nPlease select a customer");
+                consoleOutput.AppendText("\r\nPlease select a customer");
                 return null;
             }
 
@@ -234,47 +279,56 @@ namespace RedstoneQuickbooks
                         }
                         for (int i = 1; i < items.Count; i++)
                         {
-                            IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
                             if (getItemInfo(items[i]) != "")
                             {
+                                IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
                                 salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo(items[i]));
+                                salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[i]));
+                                //salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE");
                             }
                             else
                             {
-                                textBox1.AppendText("\r\nError finding " + items[i] + " in Quickbooks");
+                                consoleOutput.AppendText("\r\nError finding " + items[i] + " in Quickbooks");
                             }
-                            salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(qtys[i]));
-                            salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE");
+                            
                         }
                     }
                 }
                 catch(Exception ex)
                 {
-                    textBox1.AppendText("\r\n" + ex);
+                    consoleOutput.AppendText("\r\n" + ex);
                 }
             }
             else
             {
-                textBox1.AppendText("\r\nPlease select a file first");
+                consoleOutput.AppendText("\r\nPlease select a file first");
                 return null;
             }
             try
             {
                 IMsgSetResponse responseSet = sessionManager.DoRequests(requestMsgSet);
-                textBox1.AppendText("\r\n" + responseSet.ToXMLString());
+                consoleOutput.AppendText("\r\n" + responseSet.ToXMLString());
             }
             catch (Exception e)
             {
-                textBox1.AppendText("\r\n this error" + e); 
+                consoleOutput.AppendText("\r\n this error " + e); 
             }
+
+            notFoundItems.ForEach(delegate (String item)
+            {
+                consoleOutput.AppendText("\r\n" + item + " was not found in Quickbooks");
+            });
+            groupItems.ForEach(delegate (String item)
+            {
+                consoleOutput.AppendText("\r\n" + item + " is a group item, it needs to be entered manually");
+            });
             return requestMsgSet;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void importButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
-
-            openFileDialog1.InitialDirectory = "c:\\";
+            openFileDialog1.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             openFileDialog1.Filter = "csv files (*.csv)|*.csv|All Files (*.*)|*.*";
 
             if(openFileDialog1.ShowDialog() == DialogResult.OK)
@@ -284,38 +338,49 @@ namespace RedstoneQuickbooks
                     if((fileStream = openFileDialog1.FileName) != null)
                     {
                         fileStream = openFileDialog1.FileName;
-                        textBox1.AppendText("\r\nSelected: " + fileStream);
+                        consoleOutput.AppendText("\r\nSelected: " + fileStream);
 
                     }
                 }
                 catch(Exception ex)
                 {
-                    textBox1.AppendText("\r\nError: Could not read file from disk. Original error: " + ex.Message);
+                    consoleOutput.AppendText("\r\nError: Could not read file from disk. Original error: " + ex.Message);
                 }
             }
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void locationDropdown_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string selectedCustomer = (string)comboBox1.SelectedItem;
+            string selectedCustomer = (string)locationDropdown.SelectedItem;
             if(selectedCustomer != "")
             {
-                textBox1.AppendText("\r\ncustomer changed to: " + selectedCustomer);
+                consoleOutput.AppendText("\r\ncustomer changed to: " + selectedCustomer);
             }
             
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void uploadButton_Click(object sender, EventArgs e)
         {
+            consoleOutput.AppendText("\r\nUploading...");
             Build_AddSalesReciept();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void doneButton_Click(object sender, EventArgs e)
         {
             //Done pressed, cleanup and close app
             disconnectFromQB();
             SessionManager.getInstance().Dispose();
             Application.Exit();
+        }
+
+        private void consoleTitle_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void dropdownTitle_Click(object sender, EventArgs e)
+        {
+
         }
     }
 

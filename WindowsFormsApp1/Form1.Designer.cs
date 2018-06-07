@@ -27,131 +27,134 @@
             /// </summary>
             private void InitializeComponent()
         {
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.label1 = new System.Windows.Forms.Label();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("logo.ico")));
+            this.locationDropdown = new System.Windows.Forms.ComboBox();
+            this.dropdownTitle = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.button1 = new System.Windows.Forms.Button();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
+            this.importButton = new System.Windows.Forms.Button();
+            this.consoleOutput = new System.Windows.Forms.TextBox();
+            this.consoleTitle = new System.Windows.Forms.Label();
+            this.uploadButton = new System.Windows.Forms.Button();
+            this.doneButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
-            // comboBox1
+            // locationDropdown
             // 
-            this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
+            this.locationDropdown.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.locationDropdown.FormattingEnabled = true;
+            this.locationDropdown.Items.AddRange(new object[] {
             "Redstone Retail",
             "Tawse Winery",
             "Farmers Market"});
-            this.comboBox1.Location = new System.Drawing.Point(16, 31);
-            this.comboBox1.Margin = new System.Windows.Forms.Padding(4);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(160, 24);
-            this.comboBox1.TabIndex = 0;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            this.locationDropdown.Location = new System.Drawing.Point(16, 48);
+            this.locationDropdown.Margin = new System.Windows.Forms.Padding(4);
+            this.locationDropdown.Name = "locationDropdown";
+            this.locationDropdown.Size = new System.Drawing.Size(160, 24);
+            this.locationDropdown.TabIndex = 0;
+            this.locationDropdown.SelectedIndexChanged += new System.EventHandler(this.locationDropdown_SelectedIndexChanged);
             // 
-            // label1
+            // dropdownTitle
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(39, 11);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(111, 17);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Select Customer";
+            this.dropdownTitle.AutoSize = true;
+            this.dropdownTitle.Location = new System.Drawing.Point(13, 27);
+            this.dropdownTitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.dropdownTitle.Name = "dropdownTitle";
+            this.dropdownTitle.Size = new System.Drawing.Size(111, 17);
+            this.dropdownTitle.TabIndex = 1;
+            this.dropdownTitle.Text = "Select Customer";
+            this.dropdownTitle.Click += new System.EventHandler(this.dropdownTitle_Click);
             // 
             // openFileDialog1
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
             // 
-            // button1
+            // importButton
             // 
-            this.button1.Location = new System.Drawing.Point(226, 27);
-            this.button1.Margin = new System.Windows.Forms.Padding(4);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(100, 28);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "Import CSV";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.importButton.Location = new System.Drawing.Point(266, 44);
+            this.importButton.Margin = new System.Windows.Forms.Padding(4);
+            this.importButton.Name = "importButton";
+            this.importButton.Size = new System.Drawing.Size(100, 28);
+            this.importButton.TabIndex = 2;
+            this.importButton.Text = "Import CSV";
+            this.importButton.UseVisualStyleBackColor = true;
+            this.importButton.Click += new System.EventHandler(this.importButton_Click);
             // 
-            // textBox1
+            // consoleOutput
             // 
-            this.textBox1.Location = new System.Drawing.Point(16, 145);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(4);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBox1.Size = new System.Drawing.Size(473, 143);
-            this.textBox1.TabIndex = 3;
+            this.consoleOutput.Location = new System.Drawing.Point(16, 150);
+            this.consoleOutput.Margin = new System.Windows.Forms.Padding(4);
+            this.consoleOutput.Multiline = true;
+            this.consoleOutput.Name = "consoleOutput";
+            this.consoleOutput.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.consoleOutput.Size = new System.Drawing.Size(553, 138);
+            this.consoleOutput.TabIndex = 3;
             // 
-            // label2
+            // consoleTitle
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(16, 126);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(110, 17);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "Console Output:";
+            this.consoleTitle.AutoSize = true;
+            this.consoleTitle.Location = new System.Drawing.Point(13, 129);
+            this.consoleTitle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.consoleTitle.Name = "consoleTitle";
+            this.consoleTitle.Size = new System.Drawing.Size(110, 17);
+            this.consoleTitle.TabIndex = 4;
+            this.consoleTitle.Text = "Console Output:";
+            this.consoleTitle.Click += new System.EventHandler(this.consoleTitle_Click);
             // 
-            // button2
+            // uploadButton
             // 
-            this.button2.Location = new System.Drawing.Point(595, 240);
-            this.button2.Margin = new System.Windows.Forms.Padding(4);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(100, 28);
-            this.button2.TabIndex = 5;
-            this.button2.Text = "Upload";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
+            this.uploadButton.Location = new System.Drawing.Point(595, 214);
+            this.uploadButton.Margin = new System.Windows.Forms.Padding(4);
+            this.uploadButton.Name = "uploadButton";
+            this.uploadButton.Size = new System.Drawing.Size(100, 28);
+            this.uploadButton.TabIndex = 5;
+            this.uploadButton.Text = "Upload";
+            this.uploadButton.UseVisualStyleBackColor = true;
+            this.uploadButton.Click += new System.EventHandler(this.uploadButton_Click);
             // 
-            // button3
+            // doneButton
             // 
-            this.button3.Location = new System.Drawing.Point(595, 276);
-            this.button3.Margin = new System.Windows.Forms.Padding(4);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(100, 28);
-            this.button3.TabIndex = 6;
-            this.button3.Text = "Done";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.doneButton.Location = new System.Drawing.Point(595, 260);
+            this.doneButton.Margin = new System.Windows.Forms.Padding(4);
+            this.doneButton.Name = "doneButton";
+            this.doneButton.Size = new System.Drawing.Size(100, 28);
+            this.doneButton.TabIndex = 6;
+            this.doneButton.Text = "Done";
+            this.doneButton.UseVisualStyleBackColor = true;
+            this.doneButton.Click += new System.EventHandler(this.doneButton_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(708, 321);
-            this.Controls.Add(this.button3);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.textBox1);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.comboBox1);
+            this.Controls.Add(this.doneButton);
+            this.Controls.Add(this.uploadButton);
+            this.Controls.Add(this.consoleTitle);
+            this.Controls.Add(this.consoleOutput);
+            this.Controls.Add(this.importButton);
+            this.Controls.Add(this.dropdownTitle);
+            this.Controls.Add(this.locationDropdown);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Form1";
             this.Text = "Quickbooks Add Sales Reciept";
             this.ResumeLayout(false);
             this.PerformLayout();
 
-            //this.Icon = new System.Drawing.Icon("Resources/redstone-logo.ico");
         }
 
         #endregion
 
 
 
-        private System.Windows.Forms.ComboBox comboBox1;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ComboBox locationDropdown;
+        private System.Windows.Forms.Label dropdownTitle;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button importButton;
+        private System.Windows.Forms.TextBox consoleOutput;
+        private System.Windows.Forms.Label consoleTitle;
+        private System.Windows.Forms.Button uploadButton;
+        private System.Windows.Forms.Button doneButton;
     }
 }
 
