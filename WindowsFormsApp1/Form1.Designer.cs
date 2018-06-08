@@ -31,6 +31,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("logo.ico")));
             this.locationDropdown = new System.Windows.Forms.ComboBox();
             this.dropdownTitle = new System.Windows.Forms.Label();
+            this.infoBox = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.importButton = new System.Windows.Forms.Button();
             this.consoleOutput = new System.Windows.Forms.TextBox();
@@ -64,6 +65,17 @@
             this.dropdownTitle.TabIndex = 1;
             this.dropdownTitle.Text = "Select Customer";
             this.dropdownTitle.Click += new System.EventHandler(this.dropdownTitle_Click);
+            // 
+            // InfoBox
+            // 
+            this.infoBox.AutoSize = true;
+            this.infoBox.Location = new System.Drawing.Point(500, 27);
+            this.infoBox.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.infoBox.Name = "infoBox";
+            this.infoBox.Size = new System.Drawing.Size(111, 17);
+            this.infoBox.TabIndex = 1;
+            this.infoBox.Text = "For assistance contact:\r\nEric Tweedle \r\nerictweeds@gmail.com \r\n289-686-2226";
+            this.infoBox.Click += new System.EventHandler(this.dropdownTitle_Click);
             // 
             // openFileDialog1
             // 
@@ -134,6 +146,7 @@
             this.Controls.Add(this.consoleOutput);
             this.Controls.Add(this.importButton);
             this.Controls.Add(this.dropdownTitle);
+            this.Controls.Add(this.infoBox);
             this.Controls.Add(this.locationDropdown);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Form1";
@@ -149,6 +162,7 @@
 
         private System.Windows.Forms.ComboBox locationDropdown;
         private System.Windows.Forms.Label dropdownTitle;
+        private System.Windows.Forms.Label infoBox;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.Button importButton;
         private System.Windows.Forms.TextBox consoleOutput;
