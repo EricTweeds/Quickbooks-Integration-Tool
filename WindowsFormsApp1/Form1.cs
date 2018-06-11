@@ -317,19 +317,33 @@ namespace RedstoneQuickbooks
                         }
                         if (numLargeBottles != 0)
                         {
-                            consoleOutput.AppendText("\r\nNumber of 20 cent bottles added: " + numLargeBottles);
-                            IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
-                            salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo("BOTTLE DEPOSITS 20"));
-                            salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(numLargeBottles));
-                            //salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE"); //Redstone only
+                            if (getItemInfo("BOTTLE DEPOSIT 20") != "")
+                            {
+                                consoleOutput.AppendText("\r\nNumber of 20 cent bottles added: " + numLargeBottles);
+                                IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
+                                salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo("BOTTLE DEPOSIT 20"));
+                                salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(numLargeBottles));
+                                //salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE"); //Redstone only
+                            } else
+                            {
+                                consoleOutput.AppendText("\r\nError finding BOTTLE DEPOSIT 20 in Quickbooks");
+                            }
+
                         }
                         if (numSmallBottles != 0)
                         {
-                            consoleOutput.AppendText("\r\nNumber of 10 cent bottles added: " + numSmallBottles);
-                            IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
-                            salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo("BOTTLE DEPOSITS 10"));
-                            salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(numSmallBottles));
-                            //salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE"); //Redstone only
+                            if (getItemInfo("BOTTLE DEPOSIT 10") != "")
+                            {
+                                consoleOutput.AppendText("\r\nNumber of 10 cent bottles added: " + numLargeBottles);
+                                IORSalesReceiptLineAdd salesRecieptLine = salesRecieptAdd.ORSalesReceiptLineAddList.Append();
+                                salesRecieptLine.SalesReceiptLineAdd.ItemRef.FullName.SetValue(getItemInfo("BOTTLE DEPOSIT 10"));
+                                salesRecieptLine.SalesReceiptLineAdd.Quantity.SetValue(Convert.ToDouble(numSmallBottles));
+                                //salesRecieptLine.SalesReceiptLineAdd.ClassRef.FullName.SetValue("RETAIL STORE"); //Redstone only
+                            }
+                            else
+                            {
+                                consoleOutput.AppendText("\r\nError finding BOTTLE DEPOSIT 10 in Quickbooks");
+                            }
                         }
                     }
                 }
